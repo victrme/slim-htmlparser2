@@ -2,16 +2,7 @@
 	"name": "@victr/slim-htmlparser2",
 	"version": "0.0.0",
 	"description": "Fast & forgiving HTML/XML parser, only with Parser",
-	"keywords": [
-		"html",
-		"parser",
-		"streams",
-		"xml",
-		"dom",
-		"rss",
-		"feed",
-		"atom"
-	],
+	"keywords": ["html", "parser", "rss", "feed", "atom"],
 	"repository": {
 		"type": "git",
 		"url": "git://github.com/victrme/htmlparser2.git"
@@ -21,13 +12,17 @@
 	"tasks": {
 		"format": "deno fmt",
 		"lint": "deno lint",
-		"test": "deno test"
+		"test": "deno test",
+		"bench": "deno bench --allow-read --allow-net"
 	},
 	"publish": {
 		"include": ["src", "LICENSE", "README.md"],
 		"exclude": ["src/tests", ".github"]
 	},
 	"exports": "./src/index.ts",
+	"imports": {
+		"@std/expect": "jsr:@std/expect@^1.0.7"
+	},
 	"fmt": {
 		"lineWidth": 120,
 		"indentWidth": 4,
