@@ -1,4 +1,4 @@
-import { DecodingMode, EntityDecoder, htmlDecodeTree, xmlDecodeTree } from 'entities/dist/decode.js'
+import { DecodingMode, EntityDecoder, htmlDecodeTree, xmlDecodeTree } from './entities/decode.ts'
 
 const enum CharCodes {
 	Tab = 0x9, // "\t"
