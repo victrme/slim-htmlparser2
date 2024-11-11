@@ -1,6 +1,6 @@
 import { Parser } from '../index.ts'
 
-const html = await (await fetch('https://weather.com/')).text()
+const html = await (await fetch('https://accuweather.com/')).text()
 
 Deno.bench('No options', function () {
     let text = ''
@@ -13,39 +13,10 @@ Deno.bench('No options', function () {
         onattribute(data) {
             attr += data
         },
+        onend() {
+            console.log(text)
+        },
     })
-
-    parser.parseComplete(html)
-})
-
-Deno.bench('Lowercase tags', function () {
-    let text = ''
-    let attr = ''
-
-    const parser = new Parser({
-        ontext(data) {
-            text += data
-        },
-        onattribute(data) {
-            attr += data
-        },
-    }, { lowerCaseTags: true })
-
-    parser.parseComplete(html)
-})
-
-Deno.bench('Lowercase tags & attribute names', function () {
-    let text = ''
-    let attr = ''
-
-    const parser = new Parser({
-        ontext(data) {
-            text += data
-        },
-        onattribute(data) {
-            attr += data
-        },
-    }, { lowerCaseTags: true, lowerCaseAttributeNames: true })
 
     parser.parseComplete(html)
 })

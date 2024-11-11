@@ -1,6 +1,8 @@
-import { fromCodePoint, replaceCodePoint } from './decode-codepoint.ts'
-import { htmlDecodeTree } from './decode-data-html.ts'
-import { xmlDecodeTree } from './decode-data-xml.ts'
+import { replaceCodePoint } from './decode-codepoint.ts'
+
+// Re-export for use by eg. htmlparser2
+export { htmlDecodeTree } from './decode-data-html.ts'
+export { decodeCodePoint, fromCodePoint, replaceCodePoint } from './decode-codepoint.ts'
 
 const enum CharCodes {
     NUM = 35, // "#"
@@ -20,7 +22,7 @@ const enum CharCodes {
 /** Bit that needs to be set to convert an upper case ASCII character to lower case */
 const TO_LOWER_BIT = 0b10_0000
 
-export enum BinTrieFlags {
+enum BinTrieFlags {
     VALUE_LENGTH = 0b1100_0000_0000_0000,
     BRANCH_LENGTH = 0b0011_1111_1000_0000,
     JUMP_TABLE = 0b0000_0000_0111_1111,
@@ -75,7 +77,7 @@ export enum DecodingMode {
 /**
  * Producers for character reference errors as defined in the HTML spec.
  */
-export interface EntityErrorProducer {
+interface EntityErrorProducer {
     missingSemicolonAfterCharacterReference(): void
     absenceOfDigitsInNumericCharacterReference(
         consumedCharacters: number,
@@ -454,56 +456,6 @@ export class EntityDecoder {
 }
 
 /**
- * Creates a function that decodes entities in a string.
- *
- * @param decodeTree The decode tree.
- * @returns A function that decodes entities in a string.
- */
-function getDecoder(decodeTree: Uint16Array) {
-    let returnValue = ''
-    const decoder = new EntityDecoder(
-        decodeTree,
-        (data) => (returnValue += fromCodePoint(data)),
-    )
-
-    return function decodeWithTrie(
-        input: string,
-        decodeMode: DecodingMode,
-    ): string {
-        let lastIndex = 0
-        let offset = 0
-
-        while ((offset = input.indexOf('&', offset)) >= 0) {
-            returnValue += input.slice(lastIndex, offset)
-
-            decoder.startEntity(decodeMode)
-
-            const length = decoder.write(
-                input,
-                // Skip the "&"
-                offset + 1,
-            )
-
-            if (length < 0) {
-                lastIndex = offset + decoder.end()
-                break
-            }
-
-            lastIndex = offset + length
-            // If `length` is 0, skip the current `&` and continue.
-            offset = length === 0 ? lastIndex + 1 : lastIndex
-        }
-
-        const result = returnValue + input.slice(lastIndex)
-
-        // Make sure we don't keep a reference to the final string.
-        returnValue = ''
-
-        return result
-    }
-}
-
-/**
  * Determines the branch of the current node that is taken given the current
  * character. This function is used to traverse the trie.
  *
@@ -513,7 +465,7 @@ function getDecoder(decodeTree: Uint16Array) {
  * @param char The current character.
  * @returns The index of the next node, or -1 if no branch is taken.
  */
-export function determineBranch(
+function determineBranch(
     decodeTree: Uint16Array,
     current: number,
     nodeIndex: number,
@@ -555,56 +507,3 @@ export function determineBranch(
 
     return -1
 }
-
-const htmlDecoder = /* #__PURE__ */ getDecoder(htmlDecodeTree)
-const xmlDecoder = /* #__PURE__ */ getDecoder(xmlDecodeTree)
-
-/**
- * Decodes an HTML string.
- *
- * @param htmlString The string to decode.
- * @param mode The decoding mode.
- * @returns The decoded string.
- */
-export function decodeHTML(
-    htmlString: string,
-    mode: DecodingMode = DecodingMode.Legacy,
-): string {
-    return htmlDecoder(htmlString, mode)
-}
-
-/**
- * Decodes an HTML string in an attribute.
- *
- * @param htmlAttribute The string to decode.
- * @returns The decoded string.
- */
-export function decodeHTMLAttribute(htmlAttribute: string): string {
-    return htmlDecoder(htmlAttribute, DecodingMode.Attribute)
-}
-
-/**
- * Decodes an HTML string, requiring all entities to be terminated by a semicolon.
- *
- * @param htmlString The string to decode.
- * @returns The decoded string.
- */
-export function decodeHTMLStrict(htmlString: string): string {
-    return htmlDecoder(htmlString, DecodingMode.Strict)
-}
-
-/**
- * Decodes an XML string, requiring all entities to be terminated by a semicolon.
- *
- * @param xmlString The string to decode.
- * @returns The decoded string.
- */
-export function decodeXML(xmlString: string): string {
-    return xmlDecoder(xmlString, DecodingMode.Strict)
-}
-
-// Re-export for use by eg. htmlparser2
-export { htmlDecodeTree } from './decode-data-html.ts'
-export { xmlDecodeTree } from './decode-data-xml.ts'
-
-export { decodeCodePoint, fromCodePoint, replaceCodePoint } from './decode-codepoint.ts'

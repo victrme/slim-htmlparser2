@@ -104,51 +104,11 @@ const htmlIntegrationElements = new Set([
 
 export interface ParserOptions {
 	/**
-	 * Indicates whether special tags (`<script>`, `<style>`, and `<title>`) should get special treatment
-	 * and if "empty" tags (eg. `<br>`) can have children.  If `false`, the content of special tags
-	 * will be text only. For feeds and other XML content (documents that don't consist of HTML),
-	 * set this to `true`.
-	 *
-	 * @default false
-	 */
-	xmlMode?: boolean
-
-	/**
 	 * Decode entities within the document.
 	 *
 	 * @default true
 	 */
 	decodeEntities?: boolean
-
-	/**
-	 * If set to true, all tags will be lowercased.
-	 *
-	 * @default !xmlMode
-	 */
-	lowerCaseTags?: boolean
-
-	/**
-	 * If set to `true`, all attribute names will be lowercased. This has noticeable impact on speed.
-	 *
-	 * @default !xmlMode
-	 */
-	lowerCaseAttributeNames?: boolean
-
-	/**
-	 * If set to true, CDATA sections will be recognized as text even if the xmlMode option is not enabled.
-	 * NOTE: If xmlMode is set to `true` then CDATA sections will always be recognized as text.
-	 *
-	 * @default xmlMode
-	 */
-	recognizeCDATA?: boolean
-
-	/**
-	 * If set to `true`, self-closing tags will trigger the onclosetag event even if xmlMode is not set to `true`.
-	 * NOTE: If xmlMode is set to `true` then self-closing tags will always be recognized.
-	 *
-	 * @default xmlMode
-	 */
-	recognizeSelfClosing?: boolean
 
 	/**
 	 * Allows the default tokenizer to be overwritten.
@@ -188,13 +148,8 @@ export interface Handler {
 	): void
 	ontext(data: string): void
 	oncomment(data: string): void
-	oncdatastart(): void
-	oncdataend(): void
 	oncommentend(): void
-	onprocessinginstruction(name: string, data: string): void
 }
-
-const reNameEnd = /\s|\//
 
 export class Parser implements TokenizerCallbacks {
 	/** The start index of the last event. */
@@ -234,13 +189,10 @@ export class Parser implements TokenizerCallbacks {
 		private readonly options: ParserOptions = {},
 	) {
 		this.cbs = cbs ?? {}
-		this.htmlMode = !this.options.xmlMode
-		this.lowerCaseTagNames = options.lowerCaseTags ??
-			this.htmlMode
-		this.lowerCaseAttributeNames = options.lowerCaseAttributeNames ??
-			this.htmlMode
-		this.recognizeSelfClosing = options.recognizeSelfClosing ??
-			!this.htmlMode
+		this.htmlMode = true
+		this.lowerCaseTagNames = false
+		this.lowerCaseAttributeNames = false
+		this.recognizeSelfClosing = false
 		this.tokenizer = new (options.Tokenizer ?? Tokenizer)(
 			this.options,
 			this,
@@ -387,20 +339,6 @@ export class Parser implements TokenizerCallbacks {
 		this.startIndex = endIndex + 1
 	}
 
-	/** @internal */
-	onselfclosingtag(endIndex: number): void {
-		this.endIndex = endIndex
-		if (this.recognizeSelfClosing || this.foreignContext[0]) {
-			this.closeCurrentTag(false)
-
-			// Set `startIndex` for next node
-			this.startIndex = endIndex + 1
-		} else {
-			// Ignore the fact that the tag is self-closing.
-			this.onopentagend(endIndex)
-		}
-	}
-
 	private closeCurrentTag(isOpenImplied: boolean) {
 		const name = this.tagname
 		this.endOpenTag(isOpenImplied)
@@ -459,69 +397,12 @@ export class Parser implements TokenizerCallbacks {
 		this.attribvalue = ''
 	}
 
-	private getInstructionName(value: string) {
-		const index = value.search(reNameEnd)
-		let name = index < 0 ? value : value.substr(0, index)
-
-		if (this.lowerCaseTagNames) {
-			name = name.toLowerCase()
-		}
-
-		return name
-	}
-
-	/** @internal */
-	ondeclaration(start: number, endIndex: number): void {
-		this.endIndex = endIndex
-		const value = this.getSlice(start, endIndex)
-
-		if (this.cbs.onprocessinginstruction) {
-			const name = this.getInstructionName(value)
-			this.cbs.onprocessinginstruction(`!${name}`, `!${value}`)
-		}
-
-		// Set `startIndex` for next node
-		this.startIndex = endIndex + 1
-	}
-
-	/** @internal */
-	onprocessinginstruction(start: number, endIndex: number): void {
-		this.endIndex = endIndex
-		const value = this.getSlice(start, endIndex)
-
-		if (this.cbs.onprocessinginstruction) {
-			const name = this.getInstructionName(value)
-			this.cbs.onprocessinginstruction(`?${name}`, `?${value}`)
-		}
-
-		// Set `startIndex` for next node
-		this.startIndex = endIndex + 1
-	}
-
 	/** @internal */
 	oncomment(start: number, endIndex: number, offset: number): void {
 		this.endIndex = endIndex
 
 		this.cbs.oncomment?.(this.getSlice(start, endIndex - offset))
 		this.cbs.oncommentend?.()
-
-		// Set `startIndex` for next node
-		this.startIndex = endIndex + 1
-	}
-
-	/** @internal */
-	oncdata(start: number, endIndex: number, offset: number): void {
-		this.endIndex = endIndex
-		const value = this.getSlice(start, endIndex - offset)
-
-		if (!this.htmlMode || this.options.recognizeCDATA) {
-			this.cbs.oncdatastart?.()
-			this.cbs.ontext?.(value)
-			this.cbs.oncdataend?.()
-		} else {
-			this.cbs.oncomment?.(`[CDATA[${value}]]`)
-			this.cbs.oncommentend?.()
-		}
 
 		// Set `startIndex` for next node
 		this.startIndex = endIndex + 1
@@ -653,24 +534,5 @@ export class Parser implements TokenizerCallbacks {
 		}
 
 		if (this.ended) this.tokenizer.end()
-	}
-
-	/**
-	 * Alias of `write`, for backwards compatibility.
-	 *
-	 * @param chunk Chunk to parse.
-	 * @deprecated
-	 */
-	public parseChunk(chunk: string): void {
-		this.write(chunk)
-	}
-	/**
-	 * Alias of `end`, for backwards compatibility.
-	 *
-	 * @param chunk Optional final chunk to parse.
-	 * @deprecated
-	 */
-	public done(chunk?: string): void {
-		this.end(chunk)
 	}
 }
