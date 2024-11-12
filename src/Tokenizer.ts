@@ -102,24 +102,24 @@ export enum QuoteType {
 
 export interface TokenizerCallbacks {
 	onattribdata(start: number, endIndex: number): void
-	onattribentity(codepoint: number): void
+	// onattribentity(codepoint: number): void
 	onattribend(quote: QuoteType, endIndex: number): void
 	onattribname(start: number, endIndex: number): void
-	oncdata(start: number, endIndex: number, endOffset: number): void
+	// oncdata(start: number, endIndex: number, endOffset: number): void
 	onclosetag(start: number, endIndex: number): void
-	oncomment(
-		start: number,
-		endIndex: number,
-		endOffset: number,
-	): void
-	ondeclaration(start: number, endIndex: number): void
+	// oncomment(
+	// 	start: number,
+	// 	endIndex: number,
+	// 	endOffset: number,
+	// ): void
+	// ondeclaration(start: number, endIndex: number): void
 	onend(): void
 	onopentagend(endIndex: number): void
 	onopentagname(start: number, endIndex: number): void
-	onprocessinginstruction(start: number, endIndex: number): void
+	// onprocessinginstruction(start: number, endIndex: number): void
 	onselfclosingtag(endIndex: number): void
 	ontext(start: number, endIndex: number): void
-	ontextentity(codepoint: number, endIndex: number): void
+	// ontextentity(codepoint: number, endIndex: number): void
 }
 
 /**
@@ -378,19 +378,19 @@ export class Tokenizer {
 			if (
 				++this.sequenceIndex === this.currentSequence.length
 			) {
-				if (this.currentSequence === Sequences.CdataEnd) {
-					this.cbs.oncdata(
-						this.sectionStart,
-						this.index,
-						2,
-					)
-				} else {
-					this.cbs.oncomment(
-						this.sectionStart,
-						this.index,
-						2,
-					)
-				}
+				// if (this.currentSequence === Sequences.CdataEnd) {
+				// this.cbs.oncdata(
+				// 	this.sectionStart,
+				// 	this.index,
+				// 	2,
+				// )
+				// } else {
+				// this.cbs.oncomment(
+				// 	this.sectionStart,
+				// 	this.index,
+				// 	2,
+				// )
+				// }
 
 				this.sequenceIndex = 0
 				this.sectionStart = this.index + 1
@@ -597,17 +597,17 @@ export class Tokenizer {
 	}
 	private stateInDeclaration(c: number): void {
 		if (c === CharCodes.Gt || this.fastForwardTo(CharCodes.Gt)) {
-			this.cbs.ondeclaration(this.sectionStart, this.index)
+			// this.cbs.ondeclaration(this.sectionStart, this.index)
 			this.state = State.Text
 			this.sectionStart = this.index + 1
 		}
 	}
 	private stateInProcessingInstruction(c: number): void {
 		if (c === CharCodes.Gt || this.fastForwardTo(CharCodes.Gt)) {
-			this.cbs.onprocessinginstruction(
-				this.sectionStart,
-				this.index,
-			)
+			// this.cbs.onprocessinginstruction(
+			// 	this.sectionStart,
+			// 	this.index,
+			// )
 			this.state = State.Text
 			this.sectionStart = this.index + 1
 		}
@@ -625,7 +625,7 @@ export class Tokenizer {
 	}
 	private stateInSpecialComment(c: number): void {
 		if (c === CharCodes.Gt || this.fastForwardTo(CharCodes.Gt)) {
-			this.cbs.oncomment(this.sectionStart, this.index, 0)
+			// this.cbs.oncomment(this.sectionStart, this.index, 0)
 			this.state = State.Text
 			this.sectionStart = this.index + 1
 		}
@@ -857,9 +857,9 @@ export class Tokenizer {
 
 		if (this.state === State.InCommentLike) {
 			if (this.currentSequence === Sequences.CdataEnd) {
-				this.cbs.oncdata(this.sectionStart, endIndex, 0)
+				// this.cbs.oncdata(this.sectionStart, endIndex, 0)
 			} else {
-				this.cbs.oncomment(this.sectionStart, endIndex, 0)
+				// this.cbs.oncomment(this.sectionStart, endIndex, 0)
 			}
 		} else if (
 			this.state === State.InTagName ||
@@ -895,7 +895,7 @@ export class Tokenizer {
 			this.sectionStart = this.entityStart + consumed
 			this.index = this.sectionStart - 1
 
-			this.cbs.onattribentity(cp)
+			// this.cbs.onattribentity(cp)
 		} else {
 			if (this.sectionStart < this.entityStart) {
 				this.cbs.ontext(this.sectionStart, this.entityStart)
@@ -903,7 +903,7 @@ export class Tokenizer {
 			this.sectionStart = this.entityStart + consumed
 			this.index = this.sectionStart - 1
 
-			this.cbs.ontextentity(cp, this.sectionStart)
+			// this.cbs.ontextentity(cp, this.sectionStart)
 		}
 	}
 }

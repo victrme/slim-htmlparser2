@@ -1,5 +1,4 @@
 import { QuoteType, Tokenizer, type TokenizerCallbacks } from './Tokenizer.ts'
-import { fromCodePoint } from './entities/decode.ts'
 
 const formTags = new Set([
 	'input',
@@ -102,19 +101,21 @@ const htmlIntegrationElements = new Set([
 	'title',
 ])
 
-const reNameEnd = /\s|\//
+// const reNameEnd = /\s|\//
 
+/**
+ * All unused options stripped from htmlparser2, keeping only entity decoding if performance needs a boost.
+ */
 export interface ParserOptions {
 	/**
 	 * Decode entities within the document.
-	 *
 	 * @default true
 	 */
 	decodeEntities?: boolean
 }
 
 export interface Handler {
-	onparserinit(parser: Parser): void
+	// onparserinit(parser: Parser): void
 
 	/**
 	 * Resets the handler back to starting state
@@ -125,9 +126,25 @@ export interface Handler {
 	 * Signals the handler that parsing is done
 	 */
 	onend(): void
+
+	/**
+	 * When the Parser catches an error
+	 * @param error
+	 */
 	onerror(error: Error): void
+
+	/**
+	 * @param name tagName
+	 * @param isImplied Implied is self closing like <br>
+	 */
 	onclosetag(name: string, isImplied: boolean): void
+
+	/**
+	 * Just after finding an open tag, before its attributes
+	 * @param name tagName
+	 */
 	onopentagname(name: string): void
+
 	/**
 	 * @param name Name of the attribute
 	 * @param value Value of the attribute.
@@ -138,17 +155,28 @@ export interface Handler {
 		value: string,
 		quote?: string | undefined | null,
 	): void
+
+	/**
+	 * @param name tagName
+	 * @param attribs A list of attributes
+	 * @param isImplied
+	 */
 	onopentag(
 		name: string,
-		attribs: { [s: string]: string },
+		attribs: Record<string, string>,
 		isImplied: boolean,
 	): void
+
+	/**
+	 * @param data Text content
+	 */
 	ontext(data: string): void
-	oncomment(data: string): void
-	oncommentend(): void
-	oncdatastart(): void
-	oncdataend(): void
-	onprocessinginstruction(name: string, data: string): void
+
+	// oncomment(data: string): void
+	// oncommentend(): void
+	// oncdatastart(): void
+	// oncdataend(): void
+	// onprocessinginstruction(name: string, data: string): void
 }
 
 export class Parser implements TokenizerCallbacks {
@@ -184,6 +212,10 @@ export class Parser implements TokenizerCallbacks {
 	/** Indicates whether the parser has finished running / `.end` has been called. */
 	private ended = false
 
+	/**
+	 * @param cbs Callbacks used to intercept and handle the parsed data. ex: ontext, onclosetag
+	 * @param options Only one option left, decode entities
+	 */
 	constructor(
 		cbs?: Partial<Handler> | null,
 		private readonly options: ParserOptions = {},
@@ -195,7 +227,7 @@ export class Parser implements TokenizerCallbacks {
 		this.recognizeSelfClosing = true
 		this.tokenizer = new Tokenizer(this.options, this)
 		this.foreignContext = [!this.htmlMode]
-		this.cbs.onparserinit?.(this)
+		// this.cbs.onparserinit?.(this)
 	}
 
 	// Tokenizer event handlers
@@ -208,12 +240,12 @@ export class Parser implements TokenizerCallbacks {
 		this.startIndex = endIndex
 	}
 
-	/** @internal */
-	ontextentity(cp: number, endIndex: number): void {
-		this.endIndex = endIndex - 1
-		this.cbs.ontext?.(fromCodePoint(cp))
-		this.startIndex = endIndex
-	}
+	// /** @internal */
+	// ontextentity(cp: number, endIndex: number): void {
+	// 	this.endIndex = endIndex - 1
+	// 	this.cbs.ontext?.(fromCodePoint(cp))
+	// 	this.startIndex = endIndex
+	// }
 
 	/**
 	 * Checks if the current tag is a void element. Override this if you want
@@ -374,10 +406,10 @@ export class Parser implements TokenizerCallbacks {
 		this.attribvalue += this.getSlice(start, endIndex)
 	}
 
-	/** @internal */
-	onattribentity(cp: number): void {
-		this.attribvalue += fromCodePoint(cp)
-	}
+	// /** @internal */
+	// onattribentity(cp: number): void {
+	// 	this.attribvalue += fromCodePoint(cp)
+	// }
 
 	/** @internal */
 	onattribend(quote: QuoteType, endIndex: number): void {
@@ -407,59 +439,60 @@ export class Parser implements TokenizerCallbacks {
 		this.attribvalue = ''
 	}
 
-	/** @internal */
-	oncomment(start: number, endIndex: number, offset: number): void {
-		this.endIndex = endIndex
+	// /** @internal */
+	// oncomment(start: number, endIndex: number, offset: number): void {
+	// 	this.endIndex = endIndex
 
-		this.cbs.oncomment?.(this.getSlice(start, endIndex - offset))
-		this.cbs.oncommentend?.()
+	// 	this.cbs.oncomment?.(this.getSlice(start, endIndex - offset))
+	// 	this.cbs.oncommentend?.()
 
-		// Set `startIndex` for next node
-		this.startIndex = endIndex + 1
-	}
+	// 	// Set `startIndex` for next node
+	// 	this.startIndex = endIndex + 1
+	// }
 
-	/** @internal */
-	oncdata(start: number, endIndex: number, offset: number): void {
-		this.endIndex = endIndex
-		const value = this.getSlice(start, endIndex - offset)
+	// /** @internal */
+	// oncdata(start: number, endIndex: number, offset: number): void {
+	// 	this.endIndex = endIndex
+	// 	const value = this.getSlice(start, endIndex - offset)
 
-		this.cbs.oncomment?.(`[CDATA[${value}]]`)
-		this.cbs.oncommentend?.()
+	// 	this.cbs.oncomment?.(`[CDATA[${value}]]`)
+	// 	this.cbs.oncommentend?.()
 
-		// Set `startIndex` for next node
-		this.startIndex = endIndex + 1
-	}
+	// 	// Set `startIndex` for next node
+	// 	this.startIndex = endIndex + 1
+	// }
 
-	private getInstructionName(value: string) {
-		const index = value.search(reNameEnd)
-		let name = index < 0 ? value : value.substr(0, index)
-		if (this.lowerCaseTagNames) {
-			name = name.toLowerCase()
-		}
-		return name
-	}
-	/** @internal */
-	ondeclaration(start: number, endIndex: number): void {
-		this.endIndex = endIndex
-		const value = this.getSlice(start, endIndex)
-		if (this.cbs.onprocessinginstruction) {
-			const name = this.getInstructionName(value)
-			this.cbs.onprocessinginstruction(`!${name}`, `!${value}`)
-		}
-		// Set `startIndex` for next node
-		this.startIndex = endIndex + 1
-	}
-	/** @internal */
-	onprocessinginstruction(start: number, endIndex: number): void {
-		this.endIndex = endIndex
-		const value = this.getSlice(start, endIndex)
-		if (this.cbs.onprocessinginstruction) {
-			const name = this.getInstructionName(value)
-			this.cbs.onprocessinginstruction(`?${name}`, `?${value}`)
-		}
-		// Set `startIndex` for next node
-		this.startIndex = endIndex + 1
-	}
+	// private getInstructionName(value: string) {
+	// 	const index = value.search(reNameEnd)
+	// 	let name = index < 0 ? value : value.substr(0, index)
+	// 	if (this.lowerCaseTagNames) {
+	// 		name = name.toLowerCase()
+	// 	}
+	// 	return name
+	// }
+
+	// /** @internal */
+	// ondeclaration(start: number, endIndex: number): void {
+	// 	this.endIndex = endIndex
+	// 	const value = this.getSlice(start, endIndex)
+	// 	if (this.cbs.onprocessinginstruction) {
+	// 		const name = this.getInstructionName(value)
+	// 		this.cbs.onprocessinginstruction(`!${name}`, `!${value}`)
+	// 	}
+	// 	// Set `startIndex` for next node
+	// 	this.startIndex = endIndex + 1
+	// }
+	// /** @internal */
+	// onprocessinginstruction(start: number, endIndex: number): void {
+	// 	this.endIndex = endIndex
+	// 	const value = this.getSlice(start, endIndex)
+	// 	if (this.cbs.onprocessinginstruction) {
+	// 		const name = this.getInstructionName(value)
+	// 		this.cbs.onprocessinginstruction(`?${name}`, `?${value}`)
+	// 	}
+	// 	// Set `startIndex` for next node
+	// 	this.startIndex = endIndex + 1
+	// }
 
 	/** @internal */
 	onend(): void {
@@ -485,7 +518,7 @@ export class Parser implements TokenizerCallbacks {
 		this.stack.length = 0
 		this.startIndex = 0
 		this.endIndex = 0
-		this.cbs.onparserinit?.(this)
+		// this.cbs.onparserinit?.(this)
 		this.buffers.length = 0
 		this.foreignContext.length = 0
 		this.foreignContext.unshift(!this.htmlMode)
