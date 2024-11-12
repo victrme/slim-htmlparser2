@@ -111,11 +111,6 @@ export interface ParserOptions {
 	 * @default true
 	 */
 	decodeEntities?: boolean
-
-	/**
-	 * Allows the default tokenizer to be overwritten.
-	 */
-	Tokenizer?: typeof Tokenizer
 }
 
 export interface Handler {
@@ -197,11 +192,8 @@ export class Parser implements TokenizerCallbacks {
 		this.htmlMode = true
 		this.lowerCaseTagNames = false
 		this.lowerCaseAttributeNames = false
-		this.recognizeSelfClosing = false
-		this.tokenizer = new (options.Tokenizer ?? Tokenizer)(
-			this.options,
-			this,
-		)
+		this.recognizeSelfClosing = true
+		this.tokenizer = new Tokenizer(this.options, this)
 		this.foreignContext = [!this.htmlMode]
 		this.cbs.onparserinit?.(this)
 	}
@@ -572,28 +564,5 @@ export class Parser implements TokenizerCallbacks {
 		if (chunk) this.write(chunk)
 		this.ended = true
 		this.tokenizer.end()
-	}
-
-	/**
-	 * Pauses parsing. The parser won't emit events until `resume` is called.
-	 */
-	public pause(): void {
-		this.tokenizer.pause()
-	}
-
-	/**
-	 * Resumes parsing after `pause` was called.
-	 */
-	public resume(): void {
-		this.tokenizer.resume()
-
-		while (
-			this.tokenizer.running &&
-			this.writeIndex < this.buffers.length
-		) {
-			this.tokenizer.write(this.buffers[this.writeIndex++])
-		}
-
-		if (this.ended) this.tokenizer.end()
 	}
 }
