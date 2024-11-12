@@ -1,55 +1,34 @@
-# htmlparser2
+# slim-htmlparser2
 
 [![NPM Version](https://img.shields.io/npm/v/htmlparser2?color=%23cb3837)](https://npmjs.org/package/htmlparser2)
-[![JSR Version](<https://img.shields.io/jsr/v/%40victr/htmlparser2?color=rgb(247%2C%20223%2C%2030)>)](https://jsr.io/@victr/htmlparser2)
+[![JSR Version](<https://img.shields.io/jsr/v/%40victr/slim-htmlparser2?color=rgb(247%2C%20223%2C%2030)>)](https://jsr.io/@victr/slim-htmlparser2)
 [![Downloads](https://img.shields.io/npm/dm/htmlparser2.svg)](https://npmjs.org/package/htmlparser2)
 
 The fast & forgiving HTML parser, only with Parser.
 
-_htmlparser2 is [the fastest HTML parser](#performance), and takes some shortcuts to get there. If you need strict HTML
-spec compliance, have a look at [parse5](https://github.com/inikulin/parse5)._
+_htmlparser2 is [the fastest HTML parser](#performance), and takes some shortcuts to get there._
 
 ## Usage
 
-`htmlparser2` itself provides a callback interface that allows consumption of documents with minimal allocations. For a
-more ergonomic experience, read [Getting a DOM](#getting-a-dom) below.
+`htmlparser2` itself provides a callback interface that allows consumption of documents with minimal allocations.
 
 ```js
 import * as htmlparser2 from '@victr/htmlparser2'
 
 const parser = new htmlparser2.Parser({
-	onopentag(name, attributes) {
-		/*
-		 * This fires when a new tag is opened.
-		 *
-		 * If you don't need an aggregated `attributes` object,
-		 * have a look at the `onopentagname` and `onattribute` events.
-		 */
-		if (name === 'script' && attributes.type === 'text/javascript') {
-			console.log('JS! Hooray!')
-		}
-	},
-	ontext(text) {
-		/*
-		 * Fires whenever a section of text was processed.
-		 *
-		 * Note that this can fire at any point within text and you might
-		 * have to stitch together multiple pieces.
-		 */
-		console.log('-->', text)
-	},
-	onclosetag(tagname) {
-		/*
-		 * Fires when a tag is closed.
-		 *
-		 * You can rely on this event only firing when you have received an
-		 * equivalent opening tag before. Closing tags without corresponding
-		 * opening tags will be ignored.
-		 */
-		if (tagname === 'script') {
-			console.log("That's it?!")
-		}
-	},
+  onopentag(name, attributes) {
+    if (name === 'script' && attributes.type === 'text/javascript') {
+      console.log('JS! Hooray!')
+    }
+  },
+  ontext(text) {
+    console.log('-->', text)
+  },
+  onclosetag(tagname) {
+    if (tagname === 'script') {
+      console.log("That's it?!")
+    }
+  },
 })
 parser.write("Xyz <script type='text/javascript'>const foo = '<<bar>>';</script>")
 parser.end()
