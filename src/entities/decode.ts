@@ -1,8 +1,8 @@
 import { replaceCodePoint } from './decode-codepoint.ts'
 
-// Re-export for use by eg. htmlparser2
-export { htmlDecodeTree } from './decode-data-html.ts'
+export { DecodingMode, EntityDecoder }
 export { decodeCodePoint, fromCodePoint, replaceCodePoint } from './decode-codepoint.ts'
+export { htmlDecodeTree } from './decode-data-html.ts'
 
 const enum CharCodes {
     NUM = 35, // "#"
@@ -65,7 +65,7 @@ const enum EntityDecoderState {
     NamedEntity,
 }
 
-export enum DecodingMode {
+const enum DecodingMode {
     /** Entities in text nodes that can end with any character. */
     Legacy = 0,
     /** Only allow entities terminated with a semicolon. */
@@ -88,7 +88,7 @@ interface EntityErrorProducer {
 /**
  * Token decoder with support of writing partial entities.
  */
-export class EntityDecoder {
+class EntityDecoder {
     constructor(
         /** The tree used to decode entities. */
         private readonly decodeTree: Uint16Array,
