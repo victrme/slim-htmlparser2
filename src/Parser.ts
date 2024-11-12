@@ -102,6 +102,8 @@ const htmlIntegrationElements = new Set([
 	'title',
 ])
 
+const reNameEnd = /\s|\//
+
 export interface ParserOptions {
 	/**
 	 * Decode entities within the document.
@@ -149,6 +151,9 @@ export interface Handler {
 	ontext(data: string): void
 	oncomment(data: string): void
 	oncommentend(): void
+	oncdatastart(): void
+	oncdataend(): void
+	onprocessinginstruction(name: string, data: string): void
 }
 
 export class Parser implements TokenizerCallbacks {
@@ -237,6 +242,19 @@ export class Parser implements TokenizerCallbacks {
 		}
 
 		this.emitOpenTag(name)
+	}
+
+	/** @internal */
+	onselfclosingtag(endIndex: number): void {
+		this.endIndex = endIndex
+		if (this.recognizeSelfClosing || this.foreignContext[0]) {
+			this.closeCurrentTag(false)
+			// Set `startIndex` for next node
+			this.startIndex = endIndex + 1
+		} else {
+			// Ignore the fact that the tag is self-closing.
+			this.onopentagend(endIndex)
+		}
 	}
 
 	private emitOpenTag(name: string) {
@@ -404,6 +422,49 @@ export class Parser implements TokenizerCallbacks {
 		this.cbs.oncomment?.(this.getSlice(start, endIndex - offset))
 		this.cbs.oncommentend?.()
 
+		// Set `startIndex` for next node
+		this.startIndex = endIndex + 1
+	}
+
+	/** @internal */
+	oncdata(start: number, endIndex: number, offset: number): void {
+		this.endIndex = endIndex
+		const value = this.getSlice(start, endIndex - offset)
+
+		this.cbs.oncomment?.(`[CDATA[${value}]]`)
+		this.cbs.oncommentend?.()
+
+		// Set `startIndex` for next node
+		this.startIndex = endIndex + 1
+	}
+
+	private getInstructionName(value: string) {
+		const index = value.search(reNameEnd)
+		let name = index < 0 ? value : value.substr(0, index)
+		if (this.lowerCaseTagNames) {
+			name = name.toLowerCase()
+		}
+		return name
+	}
+	/** @internal */
+	ondeclaration(start: number, endIndex: number): void {
+		this.endIndex = endIndex
+		const value = this.getSlice(start, endIndex)
+		if (this.cbs.onprocessinginstruction) {
+			const name = this.getInstructionName(value)
+			this.cbs.onprocessinginstruction(`!${name}`, `!${value}`)
+		}
+		// Set `startIndex` for next node
+		this.startIndex = endIndex + 1
+	}
+	/** @internal */
+	onprocessinginstruction(start: number, endIndex: number): void {
+		this.endIndex = endIndex
+		const value = this.getSlice(start, endIndex)
+		if (this.cbs.onprocessinginstruction) {
+			const name = this.getInstructionName(value)
+			this.cbs.onprocessinginstruction(`?${name}`, `?${value}`)
+		}
 		// Set `startIndex` for next node
 		this.startIndex = endIndex + 1
 	}

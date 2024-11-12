@@ -1,4 +1,4 @@
-import { DecodingMode, EntityDecoder, htmlDecodeTree, xmlDecodeTree } from './entities/decode.ts'
+import { DecodingMode, EntityDecoder, htmlDecodeTree } from './entities/decode.ts'
 
 const enum CharCodes {
 	Tab = 0x9, // "\t"
@@ -208,7 +208,7 @@ export class Tokenizer {
 		this.xmlMode = xmlMode
 		this.decodeEntities = decodeEntities
 		this.entityDecoder = new EntityDecoder(
-			xmlMode ? xmlDecodeTree : htmlDecodeTree,
+			htmlDecodeTree,
 			(cp, consumed) => this.emitCodePoint(cp, consumed),
 		)
 	}
