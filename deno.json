@@ -2,10 +2,10 @@
 	"name": "@victr/slim-htmlparser2",
 	"version": "0.0.0",
 	"description": "Fast & forgiving HTML/XML parser, only with Parser",
-	"keywords": ["html", "parser", "rss", "feed", "atom"],
+	"keywords": ["html", "parser", "htmlparser2"],
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/victrme/htmlparser2.git"
+		"url": "git://github.com/victrme/slim-htmlparser2.git"
 	},
 	"license": "MIT",
 	"author": "Felix Boehm <me@feedic.com>",
@@ -17,7 +17,7 @@
 	},
 	"publish": {
 		"include": ["src", "LICENSE", "README.md"],
-		"exclude": ["src/tests", ".github"]
+		"exclude": ["src/tests", "src/benches", ".github"]
 	},
 	"exports": "./src/index.ts",
 	"imports": {
