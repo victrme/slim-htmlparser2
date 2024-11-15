@@ -82,8 +82,7 @@ function isWhitespace(c: number): boolean {
 }
 
 function isEndOfTagSection(c: number): boolean {
-	return c === CharCodes.Slash || c === CharCodes.Gt ||
-		isWhitespace(c)
+	return c === CharCodes.Slash || c === CharCodes.Gt || isWhitespace(c)
 }
 
 function isASCIIAlpha(c: number): boolean {
@@ -132,46 +131,10 @@ const Sequences = {
 	Cdata: new Uint8Array([0x43, 0x44, 0x41, 0x54, 0x41, 0x5b]), // CDATA[
 	CdataEnd: new Uint8Array([0x5d, 0x5d, 0x3e]), // ]]>
 	CommentEnd: new Uint8Array([0x2d, 0x2d, 0x3e]), // `-->`
-	ScriptEnd: new Uint8Array([
-		0x3c,
-		0x2f,
-		0x73,
-		0x63,
-		0x72,
-		0x69,
-		0x70,
-		0x74,
-	]), // `</script`
-	StyleEnd: new Uint8Array([
-		0x3c,
-		0x2f,
-		0x73,
-		0x74,
-		0x79,
-		0x6c,
-		0x65,
-	]), // `</style`
-	TitleEnd: new Uint8Array([
-		0x3c,
-		0x2f,
-		0x74,
-		0x69,
-		0x74,
-		0x6c,
-		0x65,
-	]), // `</title`
-	TextareaEnd: new Uint8Array([
-		0x3c,
-		0x2f,
-		0x74,
-		0x65,
-		0x78,
-		0x74,
-		0x61,
-		0x72,
-		0x65,
-		0x61,
-	]), // `</textarea`
+	ScriptEnd: new Uint8Array([0x3c, 0x2f, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74]), // `</script`
+	StyleEnd: new Uint8Array([0x3c, 0x2f, 0x73, 0x74, 0x79, 0x6c, 0x65]), // `</style`
+	TitleEnd: new Uint8Array([0x3c, 0x2f, 0x74, 0x69, 0x74, 0x6c, 0x65]), // `</title`
+	TextareaEnd: new Uint8Array([0x3c, 0x2f, 0x74, 0x65, 0x78, 0x74, 0x61, 0x72, 0x65, 0x61]), // `</textarea`
 }
 
 export class Tokenizer {
@@ -199,18 +162,12 @@ export class Tokenizer {
 	private readonly entityDecoder: EntityDecoder
 
 	constructor(
-		{
-			xmlMode = false,
-			decodeEntities = true,
-		}: { xmlMode?: boolean; decodeEntities?: boolean },
+		{ xmlMode = false, decodeEntities = true }: { xmlMode?: boolean; decodeEntities?: boolean },
 		private readonly cbs: TokenizerCallbacks,
 	) {
 		this.xmlMode = xmlMode
 		this.decodeEntities = decodeEntities
-		this.entityDecoder = new EntityDecoder(
-			htmlDecodeTree,
-			(cp, consumed) => this.emitCodePoint(cp, consumed),
-		)
+		this.entityDecoder = new EntityDecoder(htmlDecodeTree, (cp, consumed) => this.emitCodePoint(cp, consumed))
 	}
 
 	public reset(): void {
@@ -246,10 +203,7 @@ export class Tokenizer {
 	}
 
 	private stateText(c: number): void {
-		if (
-			c === CharCodes.Lt ||
-			(!this.decodeEntities && this.fastForwardTo(CharCodes.Lt))
-		) {
+		if (c === CharCodes.Lt || (!this.decodeEntities && this.fastForwardTo(CharCodes.Lt))) {
 			if (this.index > this.sectionStart) {
 				this.cbs.ontext(this.sectionStart, this.index)
 			}
@@ -286,8 +240,7 @@ export class Tokenizer {
 	private stateInSpecialTag(c: number): void {
 		if (this.sequenceIndex === this.currentSequence.length) {
 			if (c === CharCodes.Gt || isWhitespace(c)) {
-				const endOfText = this.index -
-					this.currentSequence.length
+				const endOfText = this.index - this.currentSequence.length
 
 				if (this.sectionStart < endOfText) {
 					// Spoof the index so that reported locations match up.
@@ -347,9 +300,7 @@ export class Tokenizer {
 	 */
 	private fastForwardTo(c: number): boolean {
 		while (++this.index < this.buffer.length + this.offset) {
-			if (
-				this.buffer.charCodeAt(this.index - this.offset) === c
-			) {
+			if (this.buffer.charCodeAt(this.index - this.offset) === c) {
 				return true
 			}
 		}
@@ -375,9 +326,7 @@ export class Tokenizer {
 	 */
 	private stateInCommentLike(c: number): void {
 		if (c === this.currentSequence[this.sequenceIndex]) {
-			if (
-				++this.sequenceIndex === this.currentSequence.length
-			) {
+			if (++this.sequenceIndex === this.currentSequence.length) {
 				// if (this.currentSequence === Sequences.CdataEnd) {
 				// this.cbs.oncdata(
 				// 	this.sectionStart,
@@ -401,9 +350,7 @@ export class Tokenizer {
 			if (this.fastForwardTo(this.currentSequence[0])) {
 				this.sequenceIndex = 1
 			}
-		} else if (
-			c !== this.currentSequence[this.sequenceIndex - 1]
-		) {
+		} else if (c !== this.currentSequence[this.sequenceIndex - 1]) {
 			// Allow long sequences, eg. --->, ]]]>
 			this.sequenceIndex = 0
 		}
@@ -525,18 +472,12 @@ export class Tokenizer {
 		if (c === CharCodes.Eq) {
 			this.state = State.BeforeAttributeValue
 		} else if (c === CharCodes.Slash || c === CharCodes.Gt) {
-			this.cbs.onattribend(
-				QuoteType.NoValue,
-				this.sectionStart,
-			)
+			this.cbs.onattribend(QuoteType.NoValue, this.sectionStart)
 			this.sectionStart = -1
 			this.state = State.BeforeAttributeName
 			this.stateBeforeAttributeName(c)
 		} else if (!isWhitespace(c)) {
-			this.cbs.onattribend(
-				QuoteType.NoValue,
-				this.sectionStart,
-			)
+			this.cbs.onattribend(QuoteType.NoValue, this.sectionStart)
 			this.state = State.InAttributeName
 			this.sectionStart = this.index
 		}
@@ -555,10 +496,7 @@ export class Tokenizer {
 		}
 	}
 	private handleInAttributeValue(c: number, quote: number) {
-		if (
-			c === quote ||
-			(!this.decodeEntities && this.fastForwardTo(quote))
-		) {
+		if (c === quote || (!this.decodeEntities && this.fastForwardTo(quote))) {
 			this.cbs.onattribdata(this.sectionStart, this.index)
 			this.sectionStart = -1
 			this.cbs.onattribend(
@@ -659,18 +597,16 @@ export class Tokenizer {
 		this.state = State.InEntity
 		this.entityStart = this.index
 		this.entityDecoder.startEntity(
-			this.xmlMode ? DecodingMode.Strict : this.baseState === State.Text ||
-					this.baseState === State.InSpecialTag
+			this.xmlMode
+				? DecodingMode.Strict
+				: this.baseState === State.Text || this.baseState === State.InSpecialTag
 				? DecodingMode.Legacy
 				: DecodingMode.Attribute,
 		)
 	}
 
 	private stateInEntity(): void {
-		const length = this.entityDecoder.write(
-			this.buffer,
-			this.index - this.offset,
-		)
+		const length = this.entityDecoder.write(this.buffer, this.index - this.offset)
 
 		// If `length` is positive, we are done with the entity.
 		if (length >= 0) {
@@ -693,8 +629,7 @@ export class Tokenizer {
 		if (this.running && this.sectionStart !== this.index) {
 			if (
 				this.state === State.Text ||
-				(this.state === State.InSpecialTag &&
-					this.sequenceIndex === 0)
+				(this.state === State.InSpecialTag && this.sequenceIndex === 0)
 			) {
 				this.cbs.ontext(this.sectionStart, this.index)
 				this.sectionStart = this.index
@@ -710,8 +645,7 @@ export class Tokenizer {
 	}
 
 	private shouldContinue() {
-		return this.index < this.buffer.length + this.offset &&
-			this.running
+		return this.index < this.buffer.length + this.offset && this.running
 	}
 
 	/**
@@ -721,9 +655,7 @@ export class Tokenizer {
 	 */
 	private parse() {
 		while (this.shouldContinue()) {
-			const c = this.buffer.charCodeAt(
-				this.index - this.offset,
-			)
+			const c = this.buffer.charCodeAt(this.index - this.offset)
 			switch (this.state) {
 				case State.Text: {
 					this.stateText(c)
@@ -881,16 +813,10 @@ export class Tokenizer {
 		}
 	}
 
-	private emitCodePoint(cp: number, consumed: number): void {
-		if (
-			this.baseState !== State.Text &&
-			this.baseState !== State.InSpecialTag
-		) {
+	private emitCodePoint(_cp: number, consumed: number): void {
+		if (this.baseState !== State.Text && this.baseState !== State.InSpecialTag) {
 			if (this.sectionStart < this.entityStart) {
-				this.cbs.onattribdata(
-					this.sectionStart,
-					this.entityStart,
-				)
+				this.cbs.onattribdata(this.sectionStart, this.entityStart)
 			}
 			this.sectionStart = this.entityStart + consumed
 			this.index = this.sectionStart - 1
