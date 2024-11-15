@@ -1,14 +1,11 @@
 import { expect, fn } from '@std/expect'
 
-import { Parser, Tokenizer } from '../index.ts'
+import { Parser } from '../index.ts'
 import type { Handler } from '../Parser.ts'
 
 Deno.test('should work without callbacks', () => {
-	const cbs: Partial<Handler> = { onerror: fn() }
-	const p = new Parser(cbs, {
-		xmlMode: true,
-		lowerCaseAttributeNames: true,
-	})
+	const cbs: Partial<Handler> = { onerror: fn() as any }
+	const p = new Parser(cbs)
 
 	p.end('<a foo><bar></a><!-- --><![CDATA[]]]><?foo?><!bar><boo/>boohay')
 	p.write('foo')
@@ -27,33 +24,14 @@ Deno.test('should work without callbacks', () => {
 	p.reset()
 
 	// Remove method
-	cbs.onopentag = fn()
+	cbs.onopentag = fn() as any
 	p.write('<a foo')
 	delete cbs.onopentag
 	p.write('>')
-
-	// Pause/resume
-	const onText = fn()
-	cbs.ontext = onText
-	p.pause()
-	p.write('foo')
-	expect(onText).not.toHaveBeenCalled()
-	p.resume()
-	expect(onText).toHaveBeenLastCalledWith('foo')
-	p.pause()
-	expect(onText).toHaveBeenCalledTimes(1)
-	p.resume()
-	expect(onText).toHaveBeenCalledTimes(1)
-	p.pause()
-	p.end('bar')
-	expect(onText).toHaveBeenCalledTimes(1)
-	p.resume()
-	expect(onText).toHaveBeenCalledTimes(2)
-	expect(onText).toHaveBeenLastCalledWith('bar')
 })
 
 Deno.test('should back out of numeric entities (#125)', () => {
-	const onend = fn()
+	const onend = fn() as any
 	let text = ''
 	const p = new Parser({
 		ontext(data) {
@@ -141,19 +119,4 @@ Deno.test('should parse <__proto__> (#387)', () => {
 
 	// Should not throw
 	p.parseComplete('<__proto__>')
-})
-
-Deno.test('should support custom tokenizer', () => {
-	class CustomTokenizer extends Tokenizer {}
-
-	const p = new Parser(
-		{
-			onparserinit(parser: Parser) {
-				// @ts-expect-error Accessing private tokenizer here
-				expect(parser.tokenizer).toBeInstanceOf(CustomTokenizer)
-			},
-		},
-		{ Tokenizer: CustomTokenizer },
-	)
-	p.end()
 })

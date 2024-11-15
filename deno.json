@@ -12,7 +12,7 @@
 	"tasks": {
 		"format": "deno fmt",
 		"lint": "deno lint",
-		"test": "deno test",
+		"test": "deno test --allow-read",
 		"bench": "deno bench --allow-read --allow-net"
 	},
 	"publish": {
