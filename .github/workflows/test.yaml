@@ -3,12 +3,16 @@ name: Lint and test
 on: push
 
 jobs:
-    job:
-      runs-on: ubuntu-latest
-      steps:
-          - uses: actions/checkout@v3
-          - uses: denoland/setup-deno@v2
-          - name: Lint
-              run: deno task lint
-          - name: Test
-              run: deno task test
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: denoland/setup-deno@v2
+      - run: deno task lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: denoland/setup-deno@v2
+      - run: deno task test
