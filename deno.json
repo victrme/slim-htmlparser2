@@ -1,7 +1,7 @@
 {
 	"name": "@victr/slim-htmlparser2",
 	"version": "0.0.2",
-	"description": "Fast & forgiving HTML/XML parser, only with Parser",
+	"description": "Fast & forgiving HTML parser, only with Parser",
 	"keywords": ["html", "parser", "htmlparser2"],
 	"repository": {
 		"type": "git",
@@ -10,8 +10,8 @@
 	"license": "MIT",
 	"author": "Felix Boehm <me@feedic.com>",
 	"tasks": {
-		"format": "deno fmt",
-		"lint": "deno lint",
+		"fmt": "deno fmt ./**/*.ts --ignore=./src/tests",
+		"lint": "deno lint ./src/*.ts",
 		"test": "deno test --allow-read",
 		"bench": "deno bench --allow-read --allow-net"
 	},
