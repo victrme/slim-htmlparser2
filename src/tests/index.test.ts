@@ -1,5 +1,5 @@
-import { expect } from '@std/expect'
-import { Parser } from '../index.ts'
+import { expect } from 'jsr:@std/expect'
+import { Parser } from '../Parser.ts'
 
 const decoder = new TextDecoder()
 const html = decoder.decode(Deno.readFileSync('./src/tests/fixtures/Real.html'))

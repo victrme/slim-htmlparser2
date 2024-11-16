@@ -1,5 +1,8 @@
 import { QuoteType, Tokenizer, type TokenizerCallbacks } from './Tokenizer.ts'
 
+export { Parser }
+export type { Handler, ParserOptions }
+
 const formTags = new Set([
 	'input',
 	'option',
@@ -106,7 +109,7 @@ const htmlIntegrationElements = new Set([
 /**
  * All unused options stripped from htmlparser2, keeping only entity decoding if performance needs a boost.
  */
-export interface ParserOptions {
+interface ParserOptions {
 	/**
 	 * Decode entities within the document.
 	 * @default true
@@ -114,7 +117,7 @@ export interface ParserOptions {
 	decodeEntities?: boolean
 }
 
-export interface Handler {
+interface Handler {
 	// onparserinit(parser: Parser): void
 
 	/**
@@ -179,7 +182,7 @@ export interface Handler {
 	// onprocessinginstruction(name: string, data: string): void
 }
 
-export class Parser implements TokenizerCallbacks {
+class Parser implements TokenizerCallbacks {
 	/** The start index of the last event. */
 	public startIndex = 0
 	/** The end index of the last event. */

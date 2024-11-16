@@ -1,8 +1,8 @@
-import { expect, fn } from '@std/expect'
 import ParserEventsSnapshot from './snapshots/Parser.events.snapshot.ts'
-
+import { expect, fn } from 'jsr:@std/expect'
 import { Parser } from '../Parser.ts'
 import * as helper from './helper.ts'
+
 import type { ParserOptions } from '../Parser.ts'
 
 type SnapshotNames = keyof typeof ParserEventsSnapshot

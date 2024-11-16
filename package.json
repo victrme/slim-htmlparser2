@@ -1,0 +1,25 @@
+{
+  "name": "@victr/slim-htmlparser2",
+  "version": "0.0.4",
+  "keywords": ["html", "parser", "htmlparser2"],
+  "description": "The fast & forgiving HTML parser, only with Parser.",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/victrme/slim-htmlparser2.git"
+  },
+  "license": "MIT",
+  "author": "Victor Azevedo <victor.azevedo@mail.com>",
+  "scripts": {
+    "types": "npx tsc src/Parser.ts --outdir dist --target es2022 --allowImportingTsExtensions --emitDeclarationOnly --declaration",
+    "build": "npx esbuild src/*.ts src/entities/*.ts --outdir=./dist --format=esm",
+    "publish": ".npm publish --access public"
+  },
+  "exports": {
+    ".": {
+      "default": "./dist/src/Parser.js",
+      "types": "./dist/src/Parser.d.ts"
+    }
+  },
+  "files": ["./dist"],
+  "type": "module"
+}

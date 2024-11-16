@@ -1,6 +1,6 @@
-import { expect, fn } from '@std/expect'
+import { expect, fn } from 'jsr:@std/expect'
+import { Parser } from '../Parser.ts'
 
-import { Parser } from '../index.ts'
 import type { Handler } from '../Parser.ts'
 
 Deno.test('should work without callbacks', () => {
